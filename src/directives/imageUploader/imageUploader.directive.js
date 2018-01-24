@@ -1,5 +1,6 @@
 angular.module('ap-files').directive('apImageUploader', [
-    function(){
+    'FileManager',
+    function(FileManager){
         return {
             require: 'ngModel',
             restrict: 'E',
@@ -11,9 +12,16 @@ angular.module('ap-files').directive('apImageUploader', [
                     name: null
                 };
                 var imageFileMimeType = /^image\/[a-z]*/g;
+                var fileManager = new FileManager(imageFileMimeType);
                 
                 function onLoadFile(event) {
                     var file = event.target.files[0];
+                    
+                    fileManager.manageFile(file).then(function(rSuccess) {
+                        ngModel.$setViewValue(rSuccess);
+                    });
+                    
+                    
                     if(!file || !imageFileMimeType.test(file.type)) return;
                     
                     var reader = new FileReader();
