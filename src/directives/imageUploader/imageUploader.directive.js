@@ -4,12 +4,19 @@ angular.module('ap-files').directive('apImageUploader', [
         return {
             require: 'ngModel',
             restrict: 'E',
-            scope: true,
+            scope: {
+                id: '@',
+                name: '@?'
+            },
             link: function(scope, elem, attr, ngModel) {
                 elem.addClass('ap-image-uploader row columns');
                 scope.image = {
                     data: null,
                     name: null
+                };
+                scope.error = {
+                    state: false,
+                    msg: ''
                 };
                 var imageFileMimeType = /^image\/[a-z]*/g;
                 var fileManager = new FileManager(imageFileMimeType);
@@ -18,22 +25,26 @@ angular.module('ap-files').directive('apImageUploader', [
                     var file = event.target.files[0];
                     
                     fileManager.manageFile(file).then(function(rSuccess) {
-                        ngModel.$setViewValue(rSuccess);
+                        ngModel.$setViewValue(rSuccess.data);
+                        scope.image.name = rSuccess.name;
+                        scope.error = {
+                            state: false,
+                            msg: ''
+                        };
+                    }, function(rError) {
+                        ngModel.$setViewValue(null);
+                        scope.image.name = null;
+                        scope.error.state = true;
+                        if(rError === 'invalid') {
+                            scope.error.msg = 'El archivo no es valido';
+                        }
+                        if(rError === 'error') {
+                            scope.error.msg = 'El archivo no es valido';
+                        }
+                        if(rError === 'abort') {
+                            scope.error.msg = 'Ocurrio un error inesperado';
+                        }
                     });
-                    
-                    
-                    if(!file || !imageFileMimeType.test(file.type)) return;
-                    
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        scope.$apply(function() {
-                            ngModel.$setViewValue({
-                                name: file.name,
-                                data: e.target.result
-                            });
-                        });
-                    };
-                    reader.readAsDataURL(file);
                 }
                 
                 elem.find('input[type="file"]').bind('change', onLoadFile);
@@ -42,13 +53,7 @@ angular.module('ap-files').directive('apImageUploader', [
                 var modelWatcher = scope.$watch(function () {
                     return ngModel.$modelValue;
                 }, function (val) {
-                    console.log('val',val);
-                    if(val) {
-                        //uso de filedata {name:'name',data:'base64data'}
-                        scope.image.name = val.name;
-                        scope.image.data = val.data;
-                        console.log(scope.image);
-                    }
+                    scope.image.data = val;
                 });
                 
                 //Desacoplamos los eventos al eliminar el objeto

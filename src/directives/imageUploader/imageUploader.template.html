@@ -1,13 +1,16 @@
 <div class="image-view">
-    <img ng-src="{{image.data}}">
+    <img ng-src="{{image.data}}" ng-show="image.data">
 </div>
 <div class="input-group">
     <div class="input-group-button">
-        <label for="exampleFileUpload" class="button file">
+        <label for="{{id}}2" class="button file">
             <i class="fa fa-file-image-o"></i>
         </label>
-        <input type="file" id="exampleFileUpload" class="show-for-sr"
+        <input type="file" id="{{id}}2" class="show-for-sr"
                accept="image/*">
     </div>
-    <input class="input-group-field" type="text" readonly ng-value="image.name">
+    <input class="input-group-field" type="text" readonly 
+           ng-class="{'is-invalid-input':error.state}"
+           ng-value="image.name">
 </div>
+<span ng-class="{'is-visible':error.state}" class="form-error" ng-bind="error.msg"></span>

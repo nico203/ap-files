@@ -1,44 +1,66 @@
 angular.module('ap-files').directive('apFileUploader', [
-    function(){
+    'FileManager',
+    function(FileManager){
         return {
             require: 'ngModel',
             restrict: 'E',
-            scope: true,
+            scope: {
+                id: '@',
+                name: '@?'
+            },
             link: function(scope, elem, attr, ngModel) {
-                elem.addClass('ap-image-loader row columns');
-                scope.image = {
-                    path: null,
+                elem.addClass('ap-file-loader row columns');
+                scope.file = {
+                    data: null,
                     name: null
                 };
-                var imageFileMimeType = /^image\/[a-z]*/g;
+                scope.error = {
+                    state: false,
+                    msg: ''
+                };
+                scope.showViewFile = false;
+                var fileMimeType = /^./g;
+                var fileManager = new FileManager(fileMimeType);
+                
+                function isBase64(str) {
+                    return str && str.includes('base64') && str.slice(-1) === '=';
+                }
                 
                 function onLoadFile(event) {
                     var file = event.target.files[0];
-                    if(!file || !imageFileMimeType.test(file.type)) return;
+                    console.log('file', file);
                     
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        scope.$apply(function() {
-                            var result = e.target.result;
-                            scope.image.path = result;
-                            scope.image.name = file.name;
-                            ngModel.$setViewValue(file);
-                        });
-                    };
-                    reader.readAsDataURL(file);
+                    fileManager.manageFile(file).then(function(rSuccess) {
+                        ngModel.$setViewValue(rSuccess.data);
+                        scope.file.name = rSuccess.name;
+                        scope.error = {
+                            state: false,
+                            msg: ''
+                        };
+                    }, function(rError) {
+                        ngModel.$setViewValue(null);
+                        scope.file.name = null;
+                        scope.error.state = true;
+                        if(rError === 'invalid') {
+                            scope.error.msg = 'El archivo no es valido';
+                        }
+                        if(rError === 'error') {
+                            scope.error.msg = 'El archivo no es valido';
+                        }
+                        if(rError === 'abort') {
+                            scope.error.msg = 'Ocurrio un error inesperado';
+                        }
+                    });
                 }
                 
                 elem.find('input[type="file"]').bind('change', onLoadFile);
 
-                scope.loadImage = function() {
-                    
-                };
-                
                 //evento que escucha el model para hacer el bindeo de las variables
                 var modelWatcher = scope.$watch(function () {
                     return ngModel.$modelValue;
-                }, function (modelValue) {
-                    console.log('modelValue',modelValue);
+                }, function (val) {
+                    scope.showViewFile = val ? !isBase64(val) : false;
+                    scope.file.data = val;
                 });
                 
                 //Desacoplamos los eventos al eliminar el objeto

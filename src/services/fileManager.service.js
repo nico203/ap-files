@@ -8,17 +8,8 @@ angular.module('ap-files').service('FileManager', [
             
 
             self.validate = function(file) {
+                if(!file) return false;
                 return self.validMimeTypes.test(file.type);
-            };
-
-            /**
-             * Recibe una cadena y chequea que sea 'string', si es retorna la cadena, sino retorna nulo
-             * 
-             * @param {type} str
-             * @returns {undefined}
-             */
-            self.manageString = function(str) {
-                return angular.isString(str) ? str : null;
             };
 
             /**
@@ -36,18 +27,24 @@ angular.module('ap-files').service('FileManager', [
             self.manageFile = function(file) {
                 var deferred = $q.defer();
                 
-                if(angular.isString(file)) return file;
-                
                 if(!self.validate(file)) {
-                    deferred.reject();
+                    deferred.reject('invalid');
                 }
                 
                 var reader = new FileReader();
-                reader.onload = function(e) {
-//                    if(!self.validate(file)) {
-//                        deferred.reject();
-//                    }
-                    deferred.resolve(e.target.result);
+                reader.onload = function() {
+                    deferred.resolve({
+                        data: reader.result,
+                        name: file.name
+                    });
+                };
+                reader.onerror = function(e) {
+                    console.log('reader.onerror',e);
+                    deferred.reject('error');
+                };
+                reader.onabort = function(e) {
+                    console.log('reader.onabort',e);
+                    deferred.reject('abort');
                 };
                 reader.readAsDataURL(file);
                 
